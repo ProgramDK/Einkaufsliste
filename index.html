@@ -1,1 +1,2382 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Einkaufsliste</title>
+  <!-- Shepherd CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@9.1.1/dist/css/shepherd.css" />
+<!-- Shepherd JS -->
+<script src="https://cdn.jsdelivr.net/npm/shepherd.js@9.1.1/dist/js/shepherd.min.js"></script>
 
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+  position: relative; /* Damit 'absolute' beim Zahnrad relativ zum Body funktioniert */
+}
+
+body {
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+* {
+  transition: 
+    background-color 0.5s ease, 
+    color 0.5s ease, 
+    border-color 0.5s ease;
+}
+
+
+.theme-blue {
+  --background-color: darkslategray;
+  --text-color: #000;
+  --article-color: #000;
+  --heading-color: #eee;
+  --secondary-text-color: #ccc;
+  --box-background: #f9f9f9;
+  --tab-background: #eee;
+  --tab-active-background: #ddd;
+  --search-suggestion-bg: #ccc;
+  --store-background: #e4e4e4;
+  --delete-button-filter: invert(1);
+}
+
+:root {
+  --background-color: #ffffff;
+  --text-color: #000;
+  --article-color: #000;
+  --heading-color: #222;
+  --secondary-text-color: #555;
+  --box-background: #d3d1d1;
+  --tab-background: #ddd;
+  --tab-active-background: #bbb;
+  --search-suggestion-bg: #eee;
+  --store-background: #efefef;
+  --statistic-header: #ddd;
+  --statistic-font-color: #000;
+  --statistic-hover: #bbb;
+  --statistic-expanded: #d3d1d1;
+  --delete-button-filter: invert(0);
+}
+
+.theme-dark {
+  --background-color: #121212;
+  --text-color: #eee;
+  --article-color: #eee;
+  --heading-color: #eee;
+  --secondary-text-color: #ccc;
+  --box-background: #3d3d3d;
+  --tab-background: #2a2a2a;
+  --tab-active-background: #444;
+  --search-suggestion-bg: #333;
+  --store-background: #1e1e1e;
+  --statistic-header: #2a2a2a;
+  --statistic-font-color: #eee;
+  --statistic-hover: #444;
+  --statistic-expanded: #2a2a2a;
+  --delete-button-filter: invert(1);
+  --toggle-icon-filter: invert(1);
+  --no-results-filter: invert (1);
+  --no-results-img-filter: invert(1);
+}
+
+    body {
+      /*background-color: rgb(115, 127, 99);*/
+      /*background-color: darkslategray;*/
+      background-color: var(--background-color);
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1rem;
+      /*color: #000;*/
+      color: var(--text-color);
+    }
+
+    h1 {
+      color: var(--heading-color);
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+
+    h2 {
+      color: var(--heading-color);
+      font-weight: bold;
+    }
+
+    h4 {
+      margin-bottom: 0.5rem;
+    }
+
+#statistik {
+  color: var(--heading-color);
+ /* justify-content: left;*/
+}
+
+#settings {
+  color: var(--secondary-text-color);
+}
+
+    .line-through {
+      text-decoration: line-through;
+      /*opacity: 0.5;*/
+      text-decoration-thickness: 4px;
+      text-decoration-color: rgba(26, 109, 0, 0.4);
+    }
+
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin: 1rem 0;
+    }
+
+.tab {
+  flex: 1 1 25%;
+  padding: 0.5rem;
+  background: var(--tab-background);
+  border: 1px solid var(--secondary-text-color);
+  cursor: pointer;
+  text-align: center;
+  margin-left: -1px; /* verhindert doppelte Border */
+  z-index: 1; /* hilft bei Überlappung */
+}
+
+.tabs .tab:first-child {
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+  margin-left: 0; /* erster Tab ohne negativen Rand */
+}
+
+.tabs .tab:last-child {
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+    .tab.active {
+      background: var(--tab-active-background);
+      font-weight: bold;
+      
+    }
+
+    .tab-content {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    input, select, button {
+      padding: 0.5rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      min-width: 120px;
+      flex: 1;
+    }
+
+    .button-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    #searchSuggestions {
+      /*background: rgb(115, 127, 99);*/
+      background-color: var(--search-suggestion-bg);
+      border: none;
+      max-height: 200px;
+      overflow: auto;
+      margin-top: 1rem;
+      max-height: fit-content;
+      border-radius: 4px;
+
+    }
+
+
+    .store-container {
+  background-color: var(--store-background);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+
+    /* Optional: Stil für zusätzliche Bereiche */
+    .summary {
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    .summary-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.summary-row .left {
+  text-align: left;
+  font-size: bold;
+}
+
+.summary-row .right {
+  text-align: right;
+  font-size: bold;
+}
+
+
+    .grand-total {
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+      font-size: 20px;
+      color: var(--heading-color);
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .list-item {
+  display: flex;
+  align-items: center;
+  background-color: var(--box-background);
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  border-radius: 5px;
+  text-align: left;
+  margin-right: 0.2rem;
+}
+
+/*Checkbox in Settings
+input[type="checkbox"] {
+  color: red;
+  margin-right: 10px; /* Abstand rechts zur Beschriftung */
+ /* margin-left: 5px;   /* Abstand links zur Umrandung oder zum Rand des Containers */
+ /* margin-top: 3px;    /* optional für vertikale Ausrichtung */
+ /* margin-bottom: 3px; /* optional */
+/*}*/
+
+
+.settings-item input[type="checkbox"] {
+  all: unset;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgb(0, 94, 28);
+  border-radius: 4px;
+  background-color: white;
+  margin-right: 0.5rem;
+  padding: 0;
+  flex: 0 0 auto;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.settings-item input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 10px;
+  height: 10px;
+  background-color: rgb(0, 94, 28);
+  border-radius: 1px;
+  /*border: solid rgb(0, 94, 28);
+  border-width: 0 3px 3px 0;
+  /*transform: rotate(45deg);*/
+}
+
+.list-item input[type="checkbox"] {
+  all: unset;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgb(0, 94, 28);
+  border-radius: 4px;
+  background-color: white;
+  margin-right: 0.5rem;
+  padding: 0;
+  flex: 0 0 auto;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.list-item input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 10px;
+  height: 10px;
+  background-color: rgb(0, 94, 28);
+  border-radius: 1px;
+  /*border: solid rgb(0, 94, 28);
+  border-width: 0 3px 3px 0;
+  /*transform: rotate(45deg);*/
+}
+
+.list-item span {
+  flex: 1 1 auto;
+  font-size: 15px;
+  color: var(--article-color);
+margin: 0;
+padding: 0;
+  background-color: transparent;
+overflow: hidden;
+white-space: nowrap;
+text-overflow: ellipsis;
+}
+
+/*Tab Einkaufslisten*/
+.list-item button.delete-button {
+  all: unset;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  font-size: 25px;
+  padding: 0;
+  flex: 0 0 auto;
+  background-color: transparent;
+}
+
+
+.list-item.faded {
+  opacity: 0.5;
+}
+
+.toggle-button { 
+  all: unset;
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+    margin-left: 0.5rem;
+  width: 30px;
+  height: 30px;
+  filter: var(--toggle-icon-filter);
+}
+
+/* Stil für den Toggle-Button mit Bild */
+.toggle-icon {
+  width: 30px;
+  height: 30px;
+}
+
+
+.delete-button { 
+  all: unset;
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0rem;
+  margin-left: 0.5rem;
+  width: 20px;
+  height: 20px;
+  filter: var(--delete-button-filter);
+}
+
+.delete-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.undo-button {
+  all: unset;
+  background-color: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-block;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 0;
+  margin-top: 0rem;
+  margin-left: 0.5rem;
+  width: 20px;
+  height: 20px;
+}
+
+.undo-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.action-date {
+  font-size: 18px;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.without-date-section {
+  font-size: 18px;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.done-section {
+  font-size: 18px;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+/*neu*/
+.store-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+
+.store-section h3 {
+  font-size: 24px;
+  margin-bottom: 0.5rem;
+  margin-left: 0rem;
+  margin-top: 0.2rem;
+}
+
+/*.item-count {
+}*/
+
+.pin-button {
+  all: unset;
+  border: none;
+  width: auto;
+  margin-left: auto;
+  cursor: pointer;
+  background: none;
+}
+
+.store-container.pinned {
+  position: relative;
+  /*top: -20px; /* oder ein anderer Wert, je nachdem, wie weit der Container verschoben werden soll */
+  z-index: 999; /* Damit der Container vor anderen Inhalten bleibt */
+}
+
+
+/**/
+
+    .settings-icon {
+  position: absolute;
+  margin-top: 0.7rem;
+  top: 1rem;
+  right: 1rem;
+  cursor: pointer;
+  font-size: 1.5rem;
+  background: #1f1f1fa2;
+  padding: 0.4rem;
+  border-radius: 20%;
+  border: 1px solid #ccc;
+}
+
+.auto-activated-notice {
+  background: #f0f0f0;
+  border-left: 5px solid orange;
+  border-radius: 5px;
+  font-weight: bold;
+  color: black;
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease,
+    max-height 0.5s ease,
+    margin 0.5s ease,
+    padding 0.5s ease;
+}
+
+.auto-activated-notice.show {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 200px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.action-activated-notice {
+  background: #f0f0f0;
+  border-left: 5px solid orange;
+  border-radius: 5px;
+  font-weight: bold;
+  color: black;
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease,
+    max-height 0.5s ease,
+    margin 0.5s ease,
+    padding 0.5s ease;
+}
+
+.action-activated-notice.show {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 200px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.activated-notice {
+  background: #f0f0f0;
+  border-left: 5px solid orange;
+  border-radius: 5px;
+  font-weight: bold;
+  color: black;
+  opacity: 0;
+  transform: translateY(-10px);
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease,
+    max-height 0.5s ease,
+    margin 0.5s ease,
+    padding 0.5s ease;
+}
+
+.activated-notice.show {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 200px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.settings-icon:hover {
+  background: #1f1f1f;
+}
+
+.no-results {
+  text-align: center;
+  color: #777;
+  margin-top: 40px;
+}
+
+.no-results img {
+  filter: var(--no-results-img-filter, none);
+  transition: filter 0.3s ease;
+}
+
+
+/* Fixierte Kopfzeile */
+.sticky-header {
+  display: flex;
+  position: sticky;
+  top: 0;
+  background: var(--statistic-header);
+  /*color: (--statistic-font-color);*/
+  font-weight: bold;
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 100;
+}
+
+/* Einheitliches Layout */
+.stat-list {
+  display: flex;
+  flex-direction: column;
+  color: var(--statistic-font-color);
+}
+
+.stat-item {
+  border-bottom: 1px solid #ccc;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.stat-item:hover {
+  background: var(--statistic-hover);
+}
+
+/* Kompakte Ansicht */
+.collapsed-view {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  align-items: center;
+}
+
+.item-name{
+  flex: 1;
+  text-align: left;
+  /*color: var(--statistic-font-color);*/
+}
+
+.item-meta {
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 160px;
+  text-align: right;
+}
+
+.item-pack{
+  white-space: nowrap;
+  min-width: 50px;
+}
+
+.item-price {
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Erweiterte Ansicht */
+.expanded-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+  background: var(--statistic-expanded);
+}
+
+.base-price {
+  flex: 3;
+}
+
+.delete-confirmation {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 90%;
+  margin-left: 10px;
+  margin-right: 10px;
+  gap: 20px;
+  padding: 10px 15px;
+  background: #f0f0f0;
+  border-left: 5px solid orange;
+  border-radius: 5px;
+  font-weight: bold;
+  color: black;
+  opacity: 0;
+  transform: translateY(100%);
+  max-height: 0;
+  transition:
+    opacity 1.4s ease,
+    transform 1.4s ease,
+    max-height 1.4s ease,
+    padding 1.4s ease;
+}
+
+.delete-confirmation.visible {
+  opacity: 1;
+  transform: translateY(0);
+  max-height: 100px;
+  padding: 20px;
+}
+
+.delete-confirmation.hidden {
+  opacity: 0;
+  transform: translateY(100%);
+  max-height: 0;
+  padding: 0;
+}
+
+.confirm-text {
+  flex: 1;
+}
+
+.confirm-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-buttons button {
+  background: orange;
+  border: none;
+  padding: 6px 12px;
+
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  color: white;
+  transition: background 0.3s;
+}
+
+.confirm-buttons button:hover {
+  background: darkorange;
+}
+
+
+/*.delete-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.delete-button img {
+  width: 20px;
+  height: 20px;
+}
+
+/* Versteckt */
+.hidden {
+  display: none;
+}
+
+
+
+  </style>
+</head>
+<body>
+  
+  <h1 class="center">Einkaufsliste</h1>
+  <div class="settings-icon tab" data-tab="settings" title="Einstellungen">⚙️</div>
+
+
+  <div class="tabs">
+    <div class="tab active" data-tab="list">Eingabe</div>
+    <div class="tab" data-tab="preise">Einkaufslisten</div>
+    <div class="tab" data-tab="statistik">Bestpreise</div>
+  </div>
+
+  <div id="list" class="tab-content active">
+    <form class="form-grid">
+      <div class="row">
+        <input id="article" placeholder="Artikel" />
+        <input id="quantity" type="number" min="1" value="1" placeholder="Menge" />
+      </div>
+      <div class="row">
+        <input id="packSize" type="number" step="any" placeholder="Verpackungsgröße" />
+        <select id="unit">
+          <option>g</option>
+          <option>kg</option>
+          <option>ml</option>
+          <option>l</option>
+        </select>
+      </div>
+      <div class="row">
+        <input id="price" type="number" step="any" placeholder="Preis" />
+        <select id="store">
+          <option>Aldi</option>
+          <option>Rewe</option>
+          <option>Lidl</option>
+        </select>
+      </div>
+      <div class="row">
+        <input id="actionDate" type="date" placeholder="Aktionsdatum" />
+      </div>
+      <div class="row button-wrapper">
+        <button id="addButton" type="button">Hinzufügen</button>
+        <button id="onceButton" type="button">Einmalig hinzufügen</button>
+      </div>
+      <div id="searchSuggestions"></div>
+    </form>
+  </div>
+
+  <div id="preise" class="tab-content">
+    <div id="lists"></div>
+    <div id="summary" class="summary"></div>
+  </div>
+
+  <div id="statistik" class="tab-content">
+    <p>Bestpreise erscheinen hier nach der ersten Eingabe.</p>
+  </div>
+
+  <div id="settings" class="tab-content">
+    <h2>Einstellungen</h2>
+    <h4>Aktionen</h4>
+
+    <div class="settings-item">
+      <label for="swipeGestures">
+        <input type="checkbox" id="SwipeGestures" />
+        Wischgesten zum abhaken und löschen
+      </label>
+    </div>
+   
+    <div class="settings-item">
+      <label for="showDoneCheckbox">
+        <input type="checkbox" id="showDoneCheckbox" />
+        Erledigt-Kasten anzeigen
+      </label>
+    </div>
+
+    <div class="settings-item">
+      <label for="showDeleteButton">
+        <input type="checkbox" id="showDeleteButton" />
+        Löschen-Button anzeigen
+      </label>
+    </div>
+<div id="autoActivatedNotice" class="auto-activated-notice" style="display:none;">
+  Automatisch aktiviert
+</div>
+  <div id="ActionActivatedNotice" class="action-activated-notice" style="display:none;">
+  Änderung übernommen
+</div>
+
+
+    <h4>Artikelinfos</h4>
+
+    <div class="settings-item">
+      <label for="showQuantity">
+        <input type="checkbox" id="showQuantity" />
+        Menge anzeigen
+      </label>
+    </div>
+
+    <div class="settings-item">
+      <label for="showBasePrice">
+        <input type="checkbox" id="showBasePrice" />
+        Grundpreis anzeigen
+      </label>
+    </div>    
+
+    <div class="settings-item">
+      <label for="showSum">
+        <input type="checkbox" id="showSum" />
+        Preissummen anzeigen
+      </label>
+    </div>
+        <div id="ActivatedNotice" class="activated-notice" style="display:none;">
+  Änderung übernommen
+</div>
+
+
+<h4>Farbschema</h4>
+    <label for="themeSelector"></label>
+<select id="themeSelector">
+  <option value="light">Hell</option>
+  <option value="dark">Dunkel</option>
+  <option value="blue">Blau</option>
+</select>
+
+
+    <h2>Läden verwalten</h2>
+
+    <input id="newStore" placeholder="Neuer Laden" />
+    <button onclick="addStore()">Hinzufügen</button>
+    <ul id="storeList"></ul>
+
+    <h2>Einheiten verwalten</h2>
+    <input id="newUnit" placeholder="Neue Einheit" />
+    <button onclick="addUnit()">Hinzufügen</button>
+    <ul id="unitList"></ul>
+
+  </div>
+
+  <script>
+    // Einfaches Tab-Wechsel-Skript
+    const tabs = document.querySelectorAll(".tab");
+    const contents = document.querySelectorAll(".tab-content");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        contents.forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
+    });
+
+//////////////////////////////////
+
+const selector = document.getElementById('themeSelector');
+
+selector.addEventListener('change', () => {
+  const theme = selector.value;
+
+  document.body.classList.remove('theme-light', 'theme-dark', 'theme-blue');
+  document.body.classList.add(`theme-${theme}`);
+});
+
+selector.addEventListener('change', () => {
+  const theme = selector.value;
+  document.body.classList.remove('theme-light', 'theme-dark', 'theme-blue');
+  document.body.classList.add(`theme-${theme}`);
+  localStorage.setItem('selectedTheme', theme);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const savedTheme = localStorage.getItem('selectedTheme');
+  if (savedTheme) {
+    document.body.classList.add(`theme-${savedTheme}`);
+    selector.value = savedTheme;
+  }
+});
+
+
+//////////////////////////////////
+
+
+    function addUnit() {
+      const input = document.getElementById("newUnit");
+      const list = document.getElementById("unitList");
+      const item = document.createElement("li");
+      item.textContent = input.value;
+      list.appendChild(item);
+      input.value = "";
+    }
+
+    function addStore() {
+      const input = document.getElementById("newStore");
+      const list = document.getElementById("storeList");
+      const item = document.createElement("li");
+      item.textContent = input.value;
+      list.appendChild(item);
+      input.value = "";
+    }
+
+function showAutoActivatedNotice() {
+  const notice = document.getElementById('autoActivatedNotice');
+  if (!notice) return;
+
+  // Setze sicherheitshalber display auf block, damit es sichtbar ist
+  notice.style.display = 'block';
+
+  // Erzwinge ein Reflow, damit der Browser die Änderung registriert
+  void notice.offsetWidth;
+
+  // Zeige das Element durch Klasse
+  notice.classList.add('show');
+
+  // Vorheriges Timeout löschen
+  clearTimeout(notice._hideTimeout);
+
+  // Nach 3 Sekunden wieder ausblenden
+  notice._hideTimeout = setTimeout(() => {
+    notice.classList.remove('show');
+
+    // Warte bis Transition vorbei ist, dann aus DOM-Fluss nehmen
+    notice.addEventListener('transitionend', function handler(e) {
+      if (!notice.classList.contains('show')) {
+        notice.style.display = 'none';
+      }
+      notice.removeEventListener('transitionend', handler);
+    });
+  }, 3000);
+}
+
+function showActionActivatedNotice() {
+  const notice = document.getElementById('ActionActivatedNotice');
+  if (!notice) return;
+
+  // Setze sicherheitshalber display auf block, damit es sichtbar ist
+  notice.style.display = 'block';
+
+  // Erzwinge ein Reflow, damit der Browser die Änderung registriert
+  void notice.offsetWidth;
+
+  // Zeige das Element durch Klasse
+  notice.classList.add('show');
+
+  // Vorheriges Timeout löschen
+  clearTimeout(notice._hideTimeout);
+
+  // Nach 3 Sekunden wieder ausblenden
+  notice._hideTimeout = setTimeout(() => {
+    notice.classList.remove('show');
+
+    // Warte bis Transition vorbei ist, dann aus DOM-Fluss nehmen
+    notice.addEventListener('transitionend', function handler(e) {
+      if (!notice.classList.contains('show')) {
+        notice.style.display = 'none';
+      }
+      notice.removeEventListener('transitionend', handler);
+    });
+  }, 3000);
+}
+
+
+function showActivatedNotice() {
+  const notice = document.getElementById('ActivatedNotice');
+  if (!notice) return;
+
+  // Setze sicherheitshalber display auf block, damit es sichtbar ist
+  notice.style.display = 'block';
+
+  // Erzwinge ein Reflow, damit der Browser die Änderung registriert
+  void notice.offsetWidth;
+
+  // Zeige das Element durch Klasse
+  notice.classList.add('show');
+
+  // Vorheriges Timeout löschen
+  clearTimeout(notice._hideTimeout);
+
+  // Nach 3 Sekunden wieder ausblenden
+  notice._hideTimeout = setTimeout(() => {
+    notice.classList.remove('show');
+
+    // Warte bis Transition vorbei ist, dann aus DOM-Fluss nehmen
+    notice.addEventListener('transitionend', function handler(e) {
+      if (!notice.classList.contains('show')) {
+        notice.style.display = 'none';
+      }
+      notice.removeEventListener('transitionend', handler);
+    });
+  }, 3000);
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+const checkboxes = {};
+
+
+    // Checkbox-Zustand aus Local Storage laden und speichern
+  const checkboxIds = [
+  'SwipeGestures',
+   'showDoneCheckbox',
+    'showDeleteButton',
+     'showQuantity',
+      'showBasePrice',
+       'showSum',
+        'showDoneSection'
+        ];
+
+  checkboxIds.forEach(id => {
+    const checkbox = document.getElementById(id);
+    if (!checkbox) return;
+
+  checkboxes[id] = checkbox;
+
+    const savedValue = localStorage.getItem(id);
+    if (savedValue !== null) {
+      checkbox.checked = savedValue === 'true';
+    }
+
+    checkbox.addEventListener('change', () => {
+      localStorage.setItem(id, checkbox.checked);
+
+      // Wenn SwipeGestures deaktiviert wird → andere Checkboxen aktivieren
+      if (id === 'SwipeGestures' && !checkbox.checked) {
+        ['showDoneCheckbox', 'showDeleteButton'].forEach(otherId => {
+          const otherCheckbox = checkboxes[otherId];
+          if (otherCheckbox && !otherCheckbox.checked) {
+            otherCheckbox.checked = true;
+            localStorage.setItem(otherId, 'true');
+          enableSwipeToToggle(); // Falls Funktion notwendig
+          renderLists();
+                showAutoActivatedNotice();
+          }
+        });
+      }
+
+      // Wenn showDoneCheckbox oder showDeleteButton deaktiviert wird → SwipeGestures aktivieren
+      if ((id === 'showDoneCheckbox' || id === 'showDeleteButton') && !checkbox.checked) {
+        const swipeCheckbox = checkboxes['SwipeGestures'];
+        if (swipeCheckbox && !swipeCheckbox.checked) {
+          swipeCheckbox.checked = true;
+          localStorage.setItem('SwipeGestures', 'true');
+          enableSwipeToToggle(); // Falls Funktion notwendig
+          renderLists();
+                showAutoActivatedNotice();
+        }
+      }
+
+    if (id === "SwipeGestures"){
+      renderLists();
+      showActionActivatedNotice();
+    }
+
+        if (id === "showDoneCheckbox"){
+      renderLists();
+      showActionActivatedNotice();
+    }
+
+    if (id === "showDeleteButton"){
+      renderLists();
+      showActionActivatedNotice();
+    }
+
+    if (id === "showBasePrice"){
+      renderLists();
+      showActivatedNotice();
+    }
+    if (id === 'showQuantity'){
+      renderLists();
+      showActivatedNotice();    
+    }
+    if (id === "showSum"){
+      renderLists();
+      showActivatedNotice();    
+    }
+
+  });
+});
+
+  // Swipe-to-toggle für alle bestehenden und zukünftigen list-items
+function enableSwipeToToggle() {
+  const listItems = document.querySelectorAll('.list-item');
+  
+  listItems.forEach(item => {
+    let startX = 0;
+    let endX = 0;
+
+    // Verhindere doppelte Listener
+    item.removeEventListener('_swipeStart', item._swipeStartHandler);
+    item.removeEventListener('_swipeEnd', item._swipeEndHandler);
+
+    // Neue benannte Handler
+    const swipeStartHandler = e => {
+      startX = e.touches[0].clientX;
+    };
+
+    const swipeEndHandler = e => {
+      endX = e.changedTouches[0].clientX;
+      const diffX = endX - startX;
+
+      // Prüfe, ob Swipe erlaubt ist
+      const swipeEnabled = document.getElementById('SwipeGestures').checked;
+
+      if (swipeEnabled && diffX > 50) {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change'));
+        }
+      }
+
+      if (swipeEnabled && diffX < -50) {
+        const store = item.dataset.store;
+        const index = parseInt(item.dataset.index, 10);
+        handleDelete(store, index, item);
+      }
+    };
+
+    // Speichern zum Entfernen bei Bedarf
+    item._swipeStartHandler = swipeStartHandler;
+    item._swipeEndHandler = swipeEndHandler;
+
+    item.addEventListener('touchstart', swipeStartHandler);
+    item.addEventListener('touchend', swipeEndHandler);
+  });
+}
+
+
+  // Rufe es beim Laden auf
+  enableSwipeToToggle();
+   renderLists();
+
+  const originalRenderLists = window.renderLists;
+  window.renderLists = function() {
+    if (originalRenderLists) originalRenderLists();
+    enableSwipeToToggle();
+  };
+});    
+  </script>
+</body>
+
+  <script>
+    const unitSelect = document.getElementById('unit');
+    const storeSelect = document.getElementById('store');
+    const listsContainer = document.getElementById('lists');
+    const addButton = document.getElementById('addButton');
+    const summaryEl = document.getElementById('summary');
+    const defaultUnits = ['g', 'kg', 'ml', 'l', 'Stk.'];
+    const defaultStores = ['Allgemein'];
+
+    let shoppingLists = JSON.parse(localStorage.getItem('shoppingLists')) || {};
+    let unitOptions = JSON.parse(localStorage.getItem('unitOptions')) || ['g', 'kg', 'ml', 'l', 'Stk.'] ;
+    let storeOptions = JSON.parse(localStorage.getItem('storeOptions')) || ['Allgemein'];
+    let statistics = JSON.parse(localStorage.getItem('statistics')) || [];
+
+    function getReadableBasePrice(item) {
+  if (isNaN(item.price) || isNaN(item.packSize) || item.packSize <= 0) return '';
+
+  let convertedPackSize = item.packSize;
+  let basePrice = 0;
+  let unitLabel = item.unit;
+
+  if (item.unit === 'g') {
+    basePrice = item.price / (item.packSize / 1000); // €/kg
+    unitLabel = 'kg';
+  } else if (item.unit === 'ml') {
+    basePrice = item.price / (item.packSize / 1000); // €/l
+    unitLabel = 'l';
+  } else {
+    basePrice = item.price / item.packSize;
+    unitLabel = item.unit; // z. B. "kg", "l", "Stk."
+  }
+
+  return ` (${basePrice.toFixed(2)} €/ ${unitLabel})`;
+}
+
+// Wiederherstellung der Auswahl
+function restoreSelections() {
+  const savedUnit = localStorage.getItem('selectedUnit');
+  if (savedUnit && unitOptions.includes(savedUnit)) {
+    unitSelect.value = savedUnit;
+  }
+
+  const savedStore = localStorage.getItem('selectedStore');
+  if (savedStore && storeOptions.includes(savedStore)) {
+    storeSelect.value = savedStore;
+  }
+
+  const savedDate = localStorage.getItem('selectedDate');
+  if (savedDate) {
+    document.getElementById('actionDate').value = savedDate;
+  }
+}
+
+// Aufrufen der Funktion beim Initialisieren
+restoreSelections();
+
+// Event-Listener zum Speichern der Auswahl
+unitSelect.addEventListener('change', () => {
+  localStorage.setItem('selectedUnit', unitSelect.value);
+});
+storeSelect.addEventListener('change', () => {
+  localStorage.setItem('selectedStore', storeSelect.value);
+});
+document.getElementById('actionDate').addEventListener('change', () => {
+  localStorage.setItem('selectedDate', document.getElementById('actionDate').value);
+});
+
+// Funktion, die das Artikel nur zum Tab 'Preise' hinzufügt (ohne die Statistik zu beeinflussen)
+function addOnceItem() {
+  const article = document.getElementById('article').value.trim();
+  const quantity = parseInt(document.getElementById('quantity').value);
+  const packSize = parseFloat(document.getElementById('packSize').value);
+  const unit = unitSelect.value;
+  const price = parseFloat(document.getElementById('price').value);
+  const store = storeSelect.value || 'Allgemein';
+  const actionDate = document.getElementById('actionDate').value;
+
+  if (!article) return;
+
+  const item = {
+    article,
+    quantity,
+    packSize: isNaN(packSize) ? '' : packSize,
+    unit,
+    price: isNaN(price) ? '' : price,
+    actionDate,
+    checked: false
+  };
+
+  if (!shoppingLists[store]) shoppingLists[store] = [];
+
+  // Verhindert das Hinzufügen, falls der Artikel schon existiert
+  const existingIndex = shoppingLists[store].findIndex(existingItem =>
+    existingItem.article === item.article &&
+    existingItem.quantity === item.quantity &&
+    existingItem.packSize === item.packSize &&
+    existingItem.unit === item.unit
+  );
+
+  if (existingIndex !== -1) {
+    const existingItem = shoppingLists[store][existingIndex];
+    if (existingItem.price === item.price) {
+      return; // Exakt gleich: nichts tun
+    } else if (existingItem.price < item.price) {
+      return; // Niedrigerer Preis vorhanden – neuen nicht übernehmen
+    } else {
+      shoppingLists[store].splice(existingIndex, 1); // Teureren Eintrag löschen
+    }
+  }
+
+  // Das Item wird nur zu den 'Preise' Listen hinzugefügt
+  shoppingLists[store].push(item);
+  saveToLocalStorage();
+  renderLists();
+  resetFormFields();
+      enableSwipeToToggle();
+
+
+  document.getElementById('article').value = '';
+  document.getElementById('quantity').value = 1;
+  document.getElementById('packSize').value = '';
+  document.getElementById('price').value = '';
+
+  // Speichere aktuelle Auswahl erneut in localStorage
+localStorage.setItem('selectedUnit', unitSelect.value);
+localStorage.setItem('selectedStore', storeSelect.value);
+localStorage.setItem('selectedDate', document.getElementById('actionDate').value);
+
+}
+
+// Ändere den Event-Listener für den 'Einmalig'-Button, um die neue Funktion zu verwenden
+document.getElementById('onceButton').addEventListener('click', addOnceItem);
+
+function updateUnitSelectOptions(selectEl, options, selectedValue = null) {
+  selectEl.innerHTML = '<option value="">Einheit Wählen</option>' + options.map(o => `<option>${o}</option>`).join('');
+  if (selectedValue && options.includes(selectedValue)) {
+    selectEl.value = selectedValue;
+  }
+}
+
+function updateStoreSelectOptions(selectEl, options, selectedValue = null) {
+  selectEl.innerHTML = '<option value="">Laden Wählen</option>' + options.map(o => `<option>${o}</option>`).join('');
+  if (selectedValue && options.includes(selectedValue)) {
+    selectEl.value = selectedValue;
+  }
+}
+
+    function saveToLocalStorage() {
+      localStorage.setItem('shoppingLists', JSON.stringify(shoppingLists));
+      localStorage.setItem('unitOptions', JSON.stringify(unitOptions));
+      localStorage.setItem('storeOptions', JSON.stringify(storeOptions));
+    }
+
+    function addItem() {
+      const article = document.getElementById('article').value.trim();
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const packSize = parseFloat(document.getElementById('packSize').value);
+      const unit = unitSelect.value;
+      const price = parseFloat(document.getElementById('price').value);
+      const store = storeSelect.value || 'Allgemein';
+      const actionDate = document.getElementById('actionDate').value;
+
+      if (!article) return;
+
+      const item = {
+        article,
+        quantity,
+        packSize: isNaN(packSize) ? '' : packSize,
+        unit,
+        price: isNaN(price) ? '' : price,
+        actionDate,
+        checked: false
+      };
+
+      if (!shoppingLists[store]) shoppingLists[store] = [];
+
+      const existingIndex = shoppingLists[store].findIndex(existingItem =>
+  existingItem.article === item.article &&
+  existingItem.quantity === item.quantity &&
+  existingItem.packSize === item.packSize &&
+  existingItem.unit === item.unit
+);
+
+if (existingIndex !== -1) {
+  // Wenn der Artikel schon exakt so existiert (gleiche Daten), nichts tun
+  const existingItem = shoppingLists[store][existingIndex];
+  if (
+    existingItem.price === item.price &&
+    existingItem.actionDate === item.actionDate
+  ) {
+    return;
+  }
+
+  // Ersetze vorhandenen Eintrag (auch wenn teurer – Statistik entscheidet separat)
+  shoppingLists[store].splice(existingIndex, 1);
+}
+
+      shoppingLists[store].push(item);
+      saveToLocalStorage();
+      updateStatistics(item);
+      renderLists();
+      resetFormFields();
+          enableSwipeToToggle();
+
+
+      document.getElementById('article').value = '';
+      document.getElementById('quantity').value = 1;
+      document.getElementById('packSize').value = '';
+      document.getElementById('price').value = '';
+
+      // Speichere aktuelle Auswahl erneut in localStorage
+localStorage.setItem('selectedUnit', unitSelect.value);
+localStorage.setItem('selectedStore', storeSelect.value);
+localStorage.setItem('selectedDate', document.getElementById('actionDate').value);
+
+    }
+
+    function toggleItem(store, index) {
+      shoppingLists[store][index].checked = !shoppingLists[store][index].checked;
+      saveToLocalStorage();
+      renderLists();
+          enableSwipeToToggle();
+
+    }
+
+    const deleteTimers = new Map(); // Speichert aktive Timer nach einem eindeutigen Schlüssel
+
+    
+function resetFormFields() {
+  document.getElementById('article').value = '';
+  document.getElementById('quantity').value = 1;
+  document.getElementById('packSize').value = '';
+  document.getElementById('price').value = '';
+}
+
+function handleDelete(store, index, div) {
+  const itemToDelete = shoppingLists[store][index];
+  const itemKey = `${store}-${itemToDelete.article}-${itemToDelete.packSize}-${itemToDelete.unit}-${itemToDelete.price}`;
+
+  div.classList.add('faded');
+
+  // Entferne eventuell vorhandene "Löschen"-Schaltfläche
+  const oldButton = div.querySelector('.delete-button');
+  if (oldButton) oldButton.remove();
+
+  // ✅ Verhindere mehrfaches Anlegen des Undo-Buttons
+  const existingUndoBtn = div.querySelector('.undo-button');
+  if (existingUndoBtn) return;
+
+  // Erstelle Undo-Button
+  const undoBtn = document.createElement('button');
+  
+// Erstelle ein img-Element und setze den src auf das Bild
+const img = document.createElement('img');
+img.src = 'img/UndoIcon.png';  // Pfad zum Bild
+img.alt = 'Undo';              // Alt-Text für das Bild
+
+// Setze die Bildgröße (optional, falls du das Bild skalieren möchtest)
+img.style.width = '20px';      // z.B. 20px Breite
+img.style.height = '20px';     // z.B. 20px Höhe
+
+// Füge das Bild in den Button ein
+undoBtn.appendChild(img);
+
+
+  undoBtn.className = 'undo-button';
+  div.appendChild(undoBtn);
+
+  // Setze den Timer auf 30 Sekunden
+  const timer = setTimeout(() => {
+    const currentList = shoppingLists[store];
+    const currentIndex = currentList.indexOf(itemToDelete);
+
+    if (currentIndex !== -1) {
+      currentList.splice(currentIndex, 1);  // Lösche den Artikel
+      if (currentList.length === 0) {
+        delete shoppingLists[store];  // Lösche das Store, wenn es leer ist
+      }
+      saveToLocalStorage();
+      renderLists(); // Liste neu rendern#
+          enableSwipeToToggle();
+
+    }
+
+    deleteTimers.delete(itemKey);  // Entferne den Timer aus der Map
+  }, 30000);
+
+  deleteTimers.set(itemKey, timer);  // Speichere den Timer mit einem eindeutigen Schlüssel
+
+  // Rückgängig-Button klicken -> Timer abbrechen und Artikel wiederherstellen
+  undoBtn.onclick = () => {
+    clearTimeout(deleteTimers.get(itemKey));  // Breche den Timer ab
+    deleteTimers.delete(itemKey);  // Entferne den Timer aus der Map
+
+    div.classList.remove('faded');  // Entferne die "Ausgegraut"-Klasse
+    undoBtn.remove();  // Entferne den Rückgängig-Button
+
+  // Füge das Löschen-Bild anstelle des Mülltonnensymbols hinzu
+  const deleteImg = document.createElement('img');
+  deleteImg.src = 'img/DeleteIcon.png';  // Dein Bild für den Löschen-Button
+  deleteImg.alt = 'Löschen';
+  deleteImg.style.width = '20px';
+  deleteImg.style.height = '20px';
+  
+  // Jetzt das Bild statt des ursprünglichen Buttons einfügen
+  const newDelBtn = document.createElement('button');
+  newDelBtn.className = 'delete-button';
+  newDelBtn.onclick = () => {
+    const newIndex = shoppingLists[store].indexOf(itemToDelete);
+    if (newIndex !== -1) {
+      handleDelete(store, newIndex, div);  // Löschen des Artikels erneut einleiten
+    }
+  };
+  newDelBtn.appendChild(deleteImg);  // Das Bild dem Button hinzufügen
+  const showDeleteButton = document.getElementById('showDeleteButton')?.checked;
+  newDelBtn.style.display = showDeleteButton ? 'inline-block' : 'none';
+
+  div.appendChild(newDelBtn);  // Den neuen Button zum div hinzufügen
+};
+}
+
+function renderItem(item, store, index) {
+  const div = document.createElement('div');
+  div.className = 'list-item';
+
+  div.dataset.store = store;
+  div.dataset.index = index;
+
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = item.checked;
+    checkbox.onchange = () => toggleItem(store, index);
+ 
+  // Sichtbarkeit anhand showDoneCheckbox steuern
+  const showDoneCheckbox = document.getElementById('showDoneCheckbox')?.checked;
+  checkbox.style.display = showDoneCheckbox ? 'inline-block' : 'none';
+
+  div.appendChild(checkbox);
+
+  const span = document.createElement('span');
+  span.className = item.checked ? 'line-through' : '';
+
+const quantitySpan = document.createElement('span');
+quantitySpan.textContent = `${item.quantity}x `
+const showQuantity = document.getElementById('showQuantity')?.checked;
+quantitySpan.style.display = showQuantity ? 'inline' : 'none';
+
+const hasPackSizeOrUnit = item.packSize || item.unit;
+const packInfo = hasPackSizeOrUnit ? ` (${item.packSize || ''}${item.unit || ''})` : '';
+ const priceText = item.price ? ` ${item.price}€` : '';
+
+const showBasePrice = document.getElementById('showBasePrice')?.checked;
+const basePrice = getReadableBasePrice(item);
+const basePriceText = (showBasePrice && basePrice && basePrice !== '0€/Einheit') ? ` ${basePrice}` : '';
+
+const restText = `${item.article}${packInfo}${priceText}${basePriceText}`;
+
+  span.appendChild(quantitySpan);
+  span.appendChild(document.createTextNode(restText));
+  div.appendChild(span);
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'delete-button';
+  delBtn.onclick = () => handleDelete(store, index, div);
+
+  const deleteImg = document.createElement('img');
+deleteImg.src = 'img/DeleteIcon.png';
+deleteImg.alt = 'Löschen';
+deleteImg.style.width = '20px';
+deleteImg.style.height = '20px';
+
+delBtn.appendChild(deleteImg);
+
+  const showDeleteButton = document.getElementById('showDeleteButton')?.checked;
+  delBtn.style.display = showDeleteButton ? 'inline-block' : 'none';
+
+  div.appendChild(delBtn);
+
+const price = parseFloat(item.price?.toString().replace(',', '.'));
+const quantity = parseFloat(item.quantity?.toString().replace(',', '.'));
+const itemTotal = (!isNaN(price) && !isNaN(quantity)) ? price * quantity : 0;
+
+
+  return { element: div, itemTotal };
+}
+
+    function renderLists() {
+    console.log('Aktuelle Einkaufslisten:', shoppingLists); // Debugging
+      listsContainer.innerHTML = '';
+      let total = 0;
+
+      // Vor dem Sortieren prüfen, ob Inhalte vorhanden sind
+const allItems = Object.values(shoppingLists).flat();
+if (allItems.length === 0) {
+  const noResultDiv = document.createElement('div');
+  noResultDiv.className = 'no-results';
+
+  const img = document.createElement('img');
+  img.src = 'img/NoResults.png';
+  img.alt = 'Keine Ergebnisse gefunden';
+  img.style.maxWidth = '200px';
+  img.style.marginTop = '20px';
+
+  const text = document.createElement('p');
+  text.textContent = 'Ziemlich leer hier... füge Artikel im Eingabefeld hinzu damit deine Einkaufslisten hier erscheinen.';
+  text.style.fontSize = '16px';
+  text.style.marginTop = '10px';
+
+  noResultDiv.appendChild(img);
+  noResultDiv.appendChild(text);
+
+  listsContainer.appendChild(noResultDiv);
+  summaryEl.style.display = 'none'; // Gesamtsumme ausblenden
+  return; // Funktion beenden, damit kein weiterer Code ausgeführt wird
+}
+
+
+  const sortedStores = Object.entries(shoppingLists).sort(([storeA], [storeB]) => {
+    if (storeA === 'Allgemein') return -1;
+    if (storeB === 'Allgemein') return 1;
+    return storeA.localeCompare(storeB);
+  });
+
+  sortedStores.forEach(([store, items]) => {
+
+    let storeTotal = 0;
+
+const container = document.createElement('div');
+container.className = 'store-container';
+
+const section = document.createElement('div');
+section.className = 'store-section';
+
+// ▶️ Toggle-Button erstellen
+const toggleButton = document.createElement('button');
+toggleButton.textContent = '⯆'; // Standard: offen
+toggleButton.className = 'toggle-button';
+
+
+// 👤 Store-Titel
+const title = document.createElement('h3');
+title.textContent = store;
+
+// pin-Button
+const pinButton = document.createElement('button');
+pinButton.textContent = '📌';
+pinButton.className = 'pin-button';
+pinButton.title = 'Anheften';
+
+
+
+// Inhalte in Container (kommt gleich in storeTotal-Teil)
+const contentContainer = document.createElement('div');
+contentContainer.className = 'store-content';
+
+// 🔁 Toggle-Logik mit zwei verschiedenen Bildern
+let expanded = localStorage.getItem(`storeExpanded_${store}`);
+expanded = expanded === null ? true : expanded === 'true';
+contentContainer.style.display = expanded ? '' : 'none';
+
+// Erstelle ein <img> Element für das Icon
+const iconImg = document.createElement('img');
+iconImg.src = expanded ? 'img/CollapseIconV2.png' : 'img/ExpandIconV2.png';
+iconImg.classList.add('toggle-icon');
+
+toggleButton.textContent = ''; // Entferne Textinhalt
+toggleButton.appendChild(iconImg);
+
+toggleButton.addEventListener('click', () => {
+  expanded = !expanded;
+  contentContainer.style.display = expanded ? '' : 'none';
+
+  // Wechsle das Bild abhängig vom Zustand
+  iconImg.src = expanded ? 'img/CollapseIconV2.png' : 'img/ExpandIconV2.png';
+    itemCountSpan.style.display = expanded ? 'none' : 'inline'; // Zahl je nach Zustand
+
+  localStorage.setItem(`storeExpanded_${store}`, expanded);
+});
+
+
+// Pin-Logik
+pinButton.addEventListener('click', () => {
+  // Wenn der Container bereits gepinnt ist, entfernen wir die 'pinned' Klasse
+  if (container.classList.contains('pinned')) {
+    container.classList.remove('pinned');
+    pinButton.textContent = '📌'; // Ändere das Icon zurück
+    renderLists();
+
+  } else {
+    // Wenn der Container noch nicht gepinnt ist, fügen wir die 'pinned' Klasse hinzu
+    container.classList.add('pinned');
+    pinButton.textContent = '📍'; // Ändere das Icon zu einem angehefteten Zustand
+    listsContainer.insertBefore(container, listsContainer.firstChild);
+  }
+});
+
+    // Trenne Artikel mit und ohne Aktionsdatum
+  const doneItems = items.filter(item => item.checked);
+  const notDoneItems = items.filter(item => !item.checked);
+
+  // Trenne offene Artikel mit und ohne Aktionsdatum
+  const itemsWithDate = notDoneItems.filter(item => item.actionDate);
+  const itemsWithoutDate = notDoneItems.filter(item => !item.actionDate);
+
+    // Gruppiere mit Aktionsdatum nach Datum
+    const groupedByDate = {};
+itemsWithDate.forEach(item => {
+  if (!groupedByDate[item.actionDate]) groupedByDate[item.actionDate] = [];
+  groupedByDate[item.actionDate].push(item);
+});
+
+const sortedDates = Object.keys(groupedByDate).sort();
+
+let storeToBuyTotal = 0;
+let storeCartTotal = 0;
+
+sortedDates.forEach(dateStr => {
+  // Umwandeln in ein Date-Objekt
+  const dateObj = new Date(dateStr);
+
+  // Formatieren: Wochentag (kurz) + Tag-Monat
+  const formatter = new Intl.DateTimeFormat('de-DE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit'
+  });
+  const formattedDate = formatter.format(dateObj); // z. B. "Mo., 05.05."
+
+  // Entferne optional den Punkt nach dem Wochentag
+  const cleanedDate = formattedDate.replace('.', '');
+
+  const dateGroup = document.createElement('div');
+  dateGroup.innerHTML = `<h4 class="action-date">Aktion ab: ${cleanedDate}</h4>`;
+
+  groupedByDate[dateStr].forEach((item, index) => {
+    const div = renderItem(item, store, items.indexOf(item));
+    dateGroup.appendChild(div.element);
+    storeTotal += div.itemTotal;
+
+      storeToBuyTotal += div.itemTotal;
+  });
+
+  contentContainer.appendChild(dateGroup);
+});
+
+if (itemsWithoutDate.length > 0) {
+  const noDateGroup = document.createElement('div');
+  noDateGroup.innerHTML = `<h4 class="without-date-section">Kein Aktionsdatum:</h4>`;
+  itemsWithoutDate.forEach((item, index) => {
+    const div = renderItem(item, store, items.indexOf(item));
+    noDateGroup.appendChild(div.element);
+    storeToBuyTotal += div.itemTotal;
+
+    storeTotal += div.itemTotal;
+  });
+  contentContainer.appendChild(noDateGroup);}
+
+  // === Bereits Erledigt (Warenkorb) ===
+  if (doneItems.length > 0) {
+    const doneGroup = document.createElement('div');
+    doneGroup.innerHTML = `<h4 class="done-section">Warenkorb:</h4>`;
+    doneItems.forEach((item, index) => {
+      const div = renderItem(item, store, items.indexOf(item));
+      doneGroup.appendChild(div.element);
+      storeCartTotal += div.itemTotal;
+      storeTotal += div.itemTotal;
+    });
+    contentContainer.appendChild(doneGroup);
+  }
+
+  // Anzahl der Artikel berechnen (nur nicht abgehakte)
+const itemCount = notDoneItems.length;
+
+// Neues Element für die Artikelanzahl
+const itemCountSpan = document.createElement('span');
+itemCountSpan.className = 'item-count';
+itemCountSpan.textContent = `${doneItems.length}/${items.length}`;
+itemCountSpan.style.marginLeft = '3px';
+itemCountSpan.style.fontWeight = 'normal';
+itemCountSpan.style.display = expanded ? 'none' : 'inline'; // nur zeigen, wenn zugeklappt
+
+// Container für Titel + Buttons
+const titleContainer = document.createElement('div');
+titleContainer.className = 'store-header';
+titleContainer.appendChild(toggleButton);
+titleContainer.appendChild(title);
+titleContainer.appendChild(itemCountSpan);
+titleContainer.appendChild(pinButton);
+
+// In den Section-Header einfügen
+section.appendChild(titleContainer);
+
+const showSumCheckbox = document.getElementById('showSum');
+const showSum = showSumCheckbox?.checked;
+console.log('Checkbox ist angehakt?', showSum);
+console.log('summaryEl:', summaryEl);
+
+// Zusammenfassung ganz am Ende
+if (showSum) {
+    const summaryDiv = document.createElement('div');
+    summaryDiv.className = 'summary';
+const storeTotalSum = storeToBuyTotal + storeCartTotal;
+summaryDiv.innerHTML = `
+  <div><strong>Summe ${store}:</strong> ${storeTotalSum.toFixed(2)} €</div>
+  <div class="summary-row">
+  <div>Warenkorb: ${storeCartTotal.toFixed(2)} €</div>
+  <div>Noch zu kaufen: ${storeToBuyTotal.toFixed(2)} €</div>
+  </div>
+`;
+    contentContainer.appendChild(summaryDiv);
+}
+
+    section.appendChild(contentContainer);
+    container.appendChild(section);
+    listsContainer.appendChild(container);
+
+total+= storeTotal;
+});
+
+const showSumCheckbox = document.getElementById('showSum');
+const showSum = showSumCheckbox?.checked;
+console.log('Checkbox ist angehakt?', showSum);
+console.log('summaryEl:', summaryEl);
+
+if (showSum) {
+  console.log('IF-Zweig wurde aufgerufen');
+  summaryEl.className = 'grand-total';
+  summaryEl.textContent = `Gesamtsumme: ${total.toFixed(2)} €`;
+  summaryEl.style.display = '';
+} else {
+  console.log('ELSE-Zweig wurde aufgerufen');
+  summaryEl.textContent = '';
+  summaryEl.style.display = 'none';
+}
+}
+
+function sortLists() {
+  // Alle Container sortieren (außer 'Allgemein' bleibt ganz oben)
+  const containers = Array.from(listsContainer.children);
+  
+  // Sortiere alle Container nach dem Store-Namen
+  const sortedContainers = containers.sort((a, b) => {
+    const storeA = a.querySelector('.store-header h3').textContent;
+    const storeB = b.querySelector('.store-header h3').textContent;
+    
+    if (storeA === 'Allgemein') return -1;
+    if (storeB === 'Allgemein') return 1;
+    
+    return storeA.localeCompare(storeB);
+  });
+
+    enableSwipeToToggle();
+
+
+  // Alle Container entfernen und in der neuen Reihenfolge wieder einfügen
+  sortedContainers.forEach(container => {
+    listsContainer.appendChild(container);
+  });
+}
+
+
+    function renderSettings() {
+  const unitList = document.getElementById('unitList');
+  const storeList = document.getElementById('storeList');
+
+  unitList.innerHTML = '';
+  storeList.innerHTML = '';
+
+  unitOptions.forEach((unit, index) => {
+  const li = document.createElement('li');
+  li.textContent = unit + ' ';
+  
+  if (!defaultUnits.includes(unit)) {
+    // Button für Löschen erstellen
+    const btn = document.createElement('delete-button');
+    
+    // Bild für Löschen erstellen
+    const deleteImg = document.createElement('img');
+    deleteImg.src = 'img/DeleteIcon.png';  // Bildquelle
+    deleteImg.alt = 'Löschen';  // Alternativtext
+    deleteImg.style.width = '20px';  // Bildgröße anpassen
+    deleteImg.style.height = '20px';
+    
+    // Das Bild in den Button einfügen
+    btn.appendChild(deleteImg);
+
+    btn.onclick = () => {
+      const confirmed = confirm(`Möchtest du "${unit}" wirklich aus der Einheitenliste löschen?`);
+      if (confirmed) {
+        unitOptions.splice(index, 1);
+        updateUnitSelectOptions(unitSelect, unitOptions);
+        renderSettings();
+        saveToLocalStorage();
+      }
+    };
+
+    // Button in das Listenelement einfügen
+    li.appendChild(btn);
+  }
+  
+  unitList.appendChild(li);
+});
+
+
+storeOptions.forEach((store, index) => {
+  const li = document.createElement('li');
+  li.textContent = store + ' ';
+  
+    if (!defaultStores.includes(store)) {
+
+  // Erstelle den Button
+  const btn = document.createElement('delete-button');
+
+  // Erstelle das img-Element für das Löschen-Symbol
+  const deleteImg = document.createElement('img');
+  deleteImg.src = 'img/DeleteIcon.png';
+  deleteImg.alt = 'Löschen';
+  deleteImg.style.width = '20px';
+  deleteImg.style.height = '20px';
+  
+  // Füge das Bild dem Button hinzu
+  btn.appendChild(deleteImg);
+  
+  btn.onclick = () => {
+      const confirmed = confirm(`Möchtest du "${store}" wirklich aus der Ladenliste löschen?`);
+      if (confirmed) {
+        storeOptions.splice(index, 1);
+        updateStoreSelectOptions(storeSelect, storeOptions);
+        renderSettings();
+        saveToLocalStorage();
+      }
+    };
+
+  // Füge den Button zum li-Element hinzu
+  li.appendChild(btn);
+  }
+  // Füge das li-Element zur Liste hinzu
+  storeList.appendChild(li);
+});
+
+}
+
+function addUnit() {
+  const input = document.getElementById('newUnit');
+  const value = input.value.trim();
+  if (value && !unitOptions.includes(value)) {
+    unitOptions.push(value);
+    updateUnitSelectOptions(unitSelect, unitOptions);
+    input.value = '';
+    saveToLocalStorage();
+    renderSettings();
+    updateUnitSelectOptions(unitSelect, unitOptions, localStorage.getItem('selectedUnit'));
+    updateStoreSelectOptions(storeSelect, storeOptions, localStorage.getItem('selectedStore'));
+
+  }
+}
+
+function addStore() {
+  const input = document.getElementById('newStore');
+  const value = input.value.trim();
+  if (value && !storeOptions.includes(value)) {
+    storeOptions.push(value);
+    updateStoreSelectOptions(storeSelect, storeOptions);
+    input.value = '';
+    saveToLocalStorage();
+    renderSettings();
+    updateUnitSelectOptions(unitSelect, unitOptions, localStorage.getItem('selectedUnit'));
+    updateStoreSelectOptions(storeSelect, storeOptions, localStorage.getItem('selectedStore'));
+  }
+}
+
+    function showTab(id) {
+        console.log('Aktiver Tab:', id); // Debugging
+      document.querySelectorAll('.tab').forEach(t => {
+        t.classList.remove('active');
+        if (t.getAttribute('data-tab') === id) t.classList.add('active');
+      });
+      document.querySelectorAll('.tab-content').forEach(c => {
+        c.classList.remove('active');
+        if (c.id === id) c.classList.add('active');
+      });
+      if (id === 'statistik') {
+        renderStatistics();
+      if (id === 'preise') {
+        renderLists();
+      }
+    }
+    }
+
+    function updateStatistics(newItem) {
+  const matchIndex = statistics.findIndex(statItem =>
+    statItem.article === newItem.article &&
+    statItem.packSize === newItem.packSize &&
+    statItem.unit === newItem.unit
+  );
+
+  if (matchIndex !== -1) {
+    const existing = statistics[matchIndex];
+    if (newItem.price < existing.price) {
+      statistics[matchIndex] = newItem; // Günstigeren Preis übernehmen
+    } else {
+      return; // Teurer oder gleich – nichts tun
+    }
+  } else {
+    statistics.push(newItem); // Neu hinzufügen
+  }
+
+  localStorage.setItem('statistics', JSON.stringify(statistics));
+  renderStatistics();
+}
+function renderStatistics() {
+  const container = document.getElementById('statistik');
+  container.innerHTML = `
+    <div class="sticky-header">
+      <div class="item-name">Artikel</div>
+      <div class="item-pack">Einheit</div>
+      <div class="item-price">Preis</div>
+    </div>
+  `;
+
+  if (statistics.length === 0) {
+    container.innerHTML += '<p>Ziemlich leer hier... füge Artikel im Eingabefeld hinzu, um hier Bestpreise zu speichern.</p>';
+    return;
+  }
+
+  statistics.sort((a, b) => a.article.localeCompare(b.article));
+
+  const list = document.createElement('div');
+  list.className = 'stat-list';
+
+  statistics.forEach((item, index) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'stat-item';
+
+    // Kompakte Ansicht (immer sichtbar)
+    const collapsed = document.createElement('div');
+    collapsed.className = 'collapsed-view';
+    collapsed.innerHTML = `
+  <div class="item-name">${item.article}</div>
+  <div class="item-meta">
+    <div class="item-pack">${item.packSize}${item.unit}</div>
+    <div class="item-price">${item.price} €</div>
+  </div>
+    `;
+
+    // Erweiterte Ansicht (nach Klick sichtbar)
+    const expanded = document.createElement('div');
+    expanded.className = 'expanded-view hidden'; // Start hidden
+    const basePrice = getReadableBasePrice(item);
+
+    const base = document.createElement('div');
+    base.className = 'base-price';
+    base.textContent = `Grundpreis: ${basePrice}`;
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-button';
+    delBtn.innerHTML = `<img src="img/DeleteIcon.png" alt="Löschen">`;
+const confirmation = document.createElement('div');
+confirmation.className = 'delete-confirmation hidden'; // Start hidden
+confirmation.innerHTML = `
+  <div class="confirm-text">Möchtest du "${item.article}" wirklich löschen?</div>
+  <div class="confirm-buttons">
+    <button class="confirm-yes">Ja</button>
+    <button class="confirm-no">Nein</button>
+  </div>
+`;
+
+delBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  confirmation.classList.remove('hidden');
+  confirmation.classList.add('visible');
+  base.classList.add('hidden'); // Grundpreis ausblenden
+  delBtn.classList.add('hidden');   // Löschen-Button ausblenden
+});
+
+// Button-Handler für Ja/Nein
+confirmation.querySelector('.confirm-yes').addEventListener('click', (e) => {
+  e.stopPropagation();
+  statistics.splice(index, 1);
+  localStorage.setItem('statistics', JSON.stringify(statistics));
+  renderStatistics();
+});
+
+confirmation.querySelector('.confirm-no').addEventListener('click', (e) => {
+  e.stopPropagation();
+  confirmation.classList.add('hidden');
+  confirmation.classList.remove('visible');
+  base.classList.remove('hidden'); // Grundpreis wieder anzeigen
+  delBtn.classList.remove('hidden'); // Löschen-Button wieder einblenden
+});
+
+
+    expanded.appendChild(base);
+    expanded.appendChild(delBtn);
+
+    wrapper.appendChild(collapsed);
+    wrapper.appendChild(expanded);
+    expanded.appendChild(confirmation);
+
+
+    // Toggle erweitern/einklappen
+    collapsed.addEventListener('click', () => {
+      expanded.classList.toggle('hidden');
+    });
+
+    list.appendChild(wrapper);
+  });
+
+  container.appendChild(list);
+}
+
+const articleInput = document.getElementById('article');
+const searchSuggestions = document.getElementById('searchSuggestions');
+
+articleInput.addEventListener('input', () => {
+  const query = articleInput.value.trim().toLowerCase();
+  searchSuggestions.innerHTML = '';
+
+  if (!query) return;
+
+  const matches = statistics.filter(item =>
+  query.includes(item.article.toLowerCase()) || item.article.toLowerCase().includes(query)
+);
+
+  if (matches.length === 0) {
+    searchSuggestions.innerHTML = '<div style="padding: 0.5rem;">Keine Treffer</div>';
+    return;
+  }
+
+  matches.forEach(item => {
+    const suggestion = document.createElement('div');
+    suggestion.style.padding = '0.5rem';
+    suggestion.style.borderBottom = '1px solid #eee';
+    suggestion.style.cursor = 'pointer';
+
+    const basePrice = getReadableBasePrice(item);
+
+    suggestion.textContent = `${item.article} (${item.packSize}${item.unit}) – ${item.price} €${basePrice}`;
+
+    suggestion.addEventListener('click', () => {
+
+  articleInput.value = item.article;
+  document.getElementById('packSize').value = item.packSize;
+  document.getElementById('price').value = item.price;
+
+  if (unitOptions.includes(item.unit)) {
+    unitSelect.value = item.unit;
+    localStorage.setItem('selectedUnit', item.unit);
+  }
+
+  searchSuggestions.innerHTML = '';
+});
+
+    searchSuggestions.appendChild(suggestion);
+  });
+});
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        showTab(id);
+      });
+    });
+
+    addButton.addEventListener('click', () => {
+  const packSize = document.getElementById('packSize').value.trim();
+  const price = document.getElementById('price').value.trim();
+  const unit = unitSelect.value.trim();
+
+  if (!packSize || !price || !unit) {
+    if (confirm("Verpackungsgröße, Einheit oder Preis fehlt zum Bestpreisvergleich.\n\nMöchtest du den Artikel trotzdem einmalig hinzufügen?")) {
+      addOnceItem(); // Falls Nutzer zustimmt
+    }
+    // Wenn Abbrechen: nichts tun
+    return; // Beende in jedem Fall hier
+  }
+
+  addItem(); // Wenn alles vorhanden ist
+});
+
+
+    updateUnitSelectOptions(unitSelect, unitOptions, localStorage.getItem('selectedUnit'));
+updateStoreSelectOptions(storeSelect, storeOptions, localStorage.getItem('selectedStore'));
+
+const savedDate = localStorage.getItem('selectedDate');
+if (savedDate) {
+  document.getElementById('actionDate').value = savedDate;
+
+}
+
+unitSelect.addEventListener('change', () => {
+  localStorage.setItem('selectedUnit', unitSelect.value);
+});
+storeSelect.addEventListener('change', () => {
+  localStorage.setItem('selectedStore', storeSelect.value);
+});
+document.getElementById('actionDate').addEventListener('change', () => {
+  localStorage.setItem('selectedDate', document.getElementById('actionDate').value);
+});
+
+renderLists();
+renderSettings();
+    
+////////////////////////
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const hasSeenGuide = localStorage.getItem('hasSeenGuide');
+
+    if (!hasSeenGuide) {
+      startTour();
+      localStorage.setItem('hasSeenGuide', 'true'); // Nur beim ersten Mal zeigen
+    }
+  });
+
+  function startTour() {
+    const tour = new Shepherd.Tour({
+      defaultStepOptions: {
+        cancelIcon: {
+          enabled: true
+        },
+        classes: 'shadow-md bg-purple-dark',
+        scrollTo: { behavior: 'smooth', block: 'center' }
+      }
+    });
+
+    tour.addStep({
+      id: 'step-1',
+      text: 'Willkommen zur Einkaufsliste! Hier kannst du deine Artikel eingeben.',
+      attachTo: {
+        element: '#list',
+        on: 'bottom'
+      },
+      buttons: [
+        {
+          text: 'Weiter',
+          action: tour.next
+        }
+      ]
+    });
+
+    tour.addStep({
+      id: 'step-2',
+      text: 'Hier siehst du deine Einkaufslisten.',
+      attachTo: {
+        element: '[data-tab="preise"]',
+        on: 'bottom'
+      },
+      buttons: [
+        {
+          text: 'Zurück',
+          action: tour.back
+        },
+        {
+          text: 'Weiter',
+          action: tour.next
+        }
+      ]
+    });
+
+    tour.addStep({
+      id: 'step-3',
+      text: 'Und hier eine Übersicht deiner bisher gekaufen Bestpreise.',
+      attachTo: {
+        element: '[data-tab="statistik"]',
+        on: 'bottom'
+      },
+      buttons: [
+        {
+          text: 'Zurück',
+          action: tour.back
+        },
+        {
+          text: 'Weiter',
+          action: tour.next
+        }
+      ]
+    });
+
+    tour.addStep({
+      id: 'step-4',
+      text: 'Hier fügst du deine eingegebenen Artikel zu den Einkaufslisten hinzu und merkst dir dessen Bestpreise.',
+      attachTo: {
+        element: '#addButton',
+        on: 'bottom'
+      },
+      buttons: [
+        {
+          text: 'Zurück',
+          action: tour.back
+        },
+        {
+          text: 'Weiter',
+          action: tour.next
+        }
+      ]
+    });
+
+    tour.addStep({
+      id: 'step-5',
+      text: 'Und hier fügst du Artikel nur zu den Einkaufslisten hinzu, aber er wird bei den Bestpreisen außer acht gelassen',
+      attachTo: {
+        element: '#onceButton',
+        on: 'bottom'
+      },
+      buttons: [
+        {
+          text: 'Zurück',
+          action: tour.back
+        },
+        {
+          text: 'Weiter',
+          action: tour.next
+        }
+      ]
+    });
+    
+tour.addStep({
+  id: 'step-6',
+  text: 'In den Einstellungen kannst du das Verhalten und Aussehen anpassen.',
+  attachTo: {
+    element: 'body', // Temporär gültiges Ziel
+    on: 'left'
+  },
+  beforeShowPromise: function () {
+    return new Promise((resolve, reject) => {
+      const settingsTabButton = document.querySelector('[data-tab="settings"]');
+      if (!settingsTabButton) {
+        console.error('⚠️ settingsTabButton wurde nicht gefunden!');
+        return reject();
+      }
+
+      settingsTabButton.click();
+
+      setTimeout(() => {
+        const settingsContent = document.querySelector('[data-tab="settings"]');
+        if (!settingsContent) {
+          console.error('⚠️ settingsContent (data-tab="settings") nicht gefunden!');
+          return reject();
+        }
+
+        const step = tour.getCurrentStep();
+        step.updateStepOptions({
+          attachTo: {
+            element: '[data-tab="settings"]',
+            on: 'left'
+          }
+        });
+
+        resolve();
+      }, 800); // Zeit ggf. anpassen
+    });
+  },
+  buttons: [
+    {
+      text: 'Zurück',
+      action: tour.back
+    },
+    {
+      text: 'Fertig',
+      action: tour.complete
+    }
+  ]
+});
+
+
+
+    tour.start();
+  }
+
+////////////////////////
+  </script>
+</body>
+</html>
